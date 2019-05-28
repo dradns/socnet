@@ -51,38 +51,29 @@ server.get('/users/:id', (req, res) => {
 });
 
 ////ДОБАВЛЕНИЕ ЮЗЕРА/////
-server.post('/registration', async(req, res) => {
-    // if (knex('users').where('email', '=', req.body.ln)){
-    //
-    // }else{
-    //
-    // }
-    /////////////
-    //ВАЛИДАЦИЯ//
-    /////////////
-    const salt = await bcrypt.genSalt(10);
-    const ph = await bcrypt.hash(req.body.ph, salt);
-    knex('users').insert({firstname : req.body.fn, email: req.body.ln, password_hash : ph})
-        .then( () => {
-            knex('users').where('email', '=', req.body.ln).then(async (user)=> {console.log(user[0].id)});
-            const payload =
-                {
-                    user: {
-                        id: ID,
-                    }
+server.post('/registration', async (req, res) => {
+    let check;
+    await knex.from('users').where('email', '=', req.body.email)
+        .then((user)=>{check = user.length; console.log(check)})
+        .catch((err) => console.log(err));
+    if (check > 0){///проверка на присутствие данного ящика
+        console.log('already exist');
+    }else{
+        const salt = await bcrypt.genSalt(10);
+        const ph = await bcrypt.hash(req.body.ph, salt);
+        await knex('users').insert({firstname : req.body.fn, email: req.body.email, password_hash : ph})
+            .then( () => {knex('users').where('email', '=', req.body.email).then(async (user)=> {console.log(user[0].id)});})
+            .then((rows) => {
+                    res.sendStatus(200);
                 }
-                console.log('its a payload>>>>>>>>>> ' + payload.user.id);
-        })
-        .then((rows) => {
-                res.sendStatus(200);
-            }
-        ).catch((err) => { console.log( err); throw err });
+            ).catch((err) => { console.log( err); throw err });
+    }
 });
 
 ////ОБНОВЛЕНИЕ ЮЗЕРА/////
 server.post('/user/update', (req, res) => {
-
-    knex('users').where('id','=',req.body.id).update({firstname : req.body.fn, email: req.body.ln, password_hash : req.body.ph})
+    knex('users').where('id','=',req.body.id)
+        .update({firstname : req.body.fn, email: req.body.ln, password_hash : req.body.ph})
         .then((rows) => {
                 res.sendStatus(500);
             }
@@ -92,25 +83,22 @@ server.post('/user/update', (req, res) => {
 ////ПОИСК ЮЗЕРА//////////
 server.get('/users/find/:fn', (req, res) => {
     knex.from('users').select('*').where('firstname','=', req.params.fn)
-        .then((rows) => {
-            res.json(rows);
-        }
-    ).catch((err) => { console.log( err); throw err });
+        .then((rows) => {res.json(rows);})
+        .catch((err) => { console.log( err); throw err });
 });
 
 ////ОБЩИЙ СПИСОК ЮЗЕРОВ//
 server.get('/users', (req, res) => {
     knex.from('users').select("*")
-        .then((rows) => {
-                res.json(rows);
-        }
-        ).catch((err) => { console.log( err); throw err });
+        .then((rows) => {res.json(rows);})
+        .catch((err) => { console.log( err); throw err });
         // .finally(() => {
         //     knex.destroy();
         // });
 });
 
-server.post('/login', async (req, res) => {
+//LOGIN////
+server.post('/login', async (req, res, next) => {
     let userID;
     await knex.from('users').where('email','=',req.body.email)
         .then( (user) => {console.log('its a user email: ' + user[0].email); return user[0].id; })
@@ -121,17 +109,15 @@ server.post('/login', async (req, res) => {
         })
         .catch((err) => { console.log( err); throw err });
 
-        const token = jwt.sign(
-            {
+    const token = jwt.sign(
+        {
             sub: userID,
-            }, 'secret', {expiresIn: 3600});
-
-        console.log('its a userID from token: ' + userID);
-
-        res
-        .status(200)
-        .send({access_token: token});
-        console.log(token);
-});
+        }, 'secret', {expiresIn: 3600});
+    console.log('its a userID from token: ' + userID);
+    next();
+    }, (req, res) => {
+        res.redirect('/resourse/secret');
+        }
+);
 
 server.listen(PORT, ()=> {console.log(`server just starting on ${PORT} port`)});
