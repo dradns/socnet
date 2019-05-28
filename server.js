@@ -113,6 +113,9 @@ server.post('/login', async (req, res, next) => {
         {
             sub: userID,
         }, 'secret', {expiresIn: 3600});
+
+    await knex('users').where('id','=',userID).update({JWT : token});
+
     console.log('its a userID from token: ' + userID);
     next();
     }, (req, res) => {
