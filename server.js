@@ -46,27 +46,26 @@ server.get('/resourse/secret',jwtCheck, (req, res) => {
 ////ПОИСК ПО АЙДИ////////
 server.get('/users/:id', (req, res) => {
     knex.from('users').select("*").where('id','=',req.params.id)
-        .then((rows) => res.json(rows)
-        ).catch((err) => { console.log( err); throw err });
+        .then((rows) => res.json(rows))
+        .catch((err) => { console.log( err); throw err });
 });
 
 ////ДОБАВЛЕНИЕ ЮЗЕРА/////
 server.post('/registration', async (req, res) => {
-    let check;
+    let check;//проверка на присутствие данного ящика в базе
     await knex.from('users').where('email', '=', req.body.email)
-        .then((user)=>{check = user.length; console.log(check)})
+        .then((user)=>{check = user.length; console.log(check)})//проверка осуществляется путем нахождения длины массива
         .catch((err) => console.log(err));
     if (check > 0){///проверка на присутствие данного ящика
-        console.log('already exist');
+        console.log('user already exist');
     }else{
-        const salt = await bcrypt.genSalt(10);
-        const ph = await bcrypt.hash(req.body.ph, salt);
+        const salt = await bcrypt.genSalt(10);//хэшируем пароль
+        const ph = await bcrypt.hash(req.body.ph, salt);//хэшируем пароль
         await knex('users').insert({firstname : req.body.fn, email: req.body.email, password_hash : ph})
-            .then( () => {knex('users').where('email', '=', req.body.email).then(async (user)=> {console.log(user[0].id)});})
-            .then((rows) => {
-                    res.sendStatus(200);
-                }
-            ).catch((err) => { console.log( err); throw err });
+        .then( () => {knex('users').where('email', '=', req.body.email)
+        .then(async (user)=> {console.log(user[0].id)});})
+        .then((rows) => {res.sendStatus(200);})
+        .catch((err) => { console.log( err); throw err });
     }
 });
 
@@ -99,27 +98,51 @@ server.get('/users', (req, res) => {
 
 //LOGIN////
 server.post('/login', async (req, res, next) => {
-    let userID;
-    await knex.from('users').where('email','=',req.body.email)
-        .then( (user) => {console.log('its a user email: ' + user[0].email); return user[0].id; })
-        .then((userEmail) =>
-        {
-            console.log('its a user ID: ' + userEmail);
-            userID =  userEmail;
-        })
-        .catch((err) => { console.log( err); throw err });
+    let email;//хранить емэйл из базы
+    let pass;//хранить пассворд хэш из базы
+    let userID;//хранить юзерАЙДИ из базы
+    let token;
 
-    const token = jwt.sign(
-        {
-            sub: userID,
-        }, 'secret', {expiresIn: 3600});
+    await knex.from('users').where('email', '=', req.body.email)
+    .then((user)=>
+     {
+     email = user[0].email;//вытаскиваем емэйл из базы
+     pass = user[0].password_hash;//вытаскиваем пассвордхэш из базы
+     userID = user[0].id;//вытаскиваем пассвордхэш из базы
+     })
+     .catch((err) => console.log(err));
 
-    await knex('users').where('id','=',userID).update({JWT : token});
+    await console.log('global email ' + email);///дебажим
+    await console.log('global pass_hash ' + pass);///дебажим
+    await console.log('global USER ID ' + userID);///дебажим
+    await console.log('body pass ' +req.body.password);///дебажим
 
-    console.log('its a userID from token: ' + userID);
+    await bcrypt.compare(req.body.password, pass, function(err, res) {//верифицируем пароли
+        if (err){
+            console.log('uuuuuups errror ' + err);
+        }
+        if (res){//если все хорошо генерим токен
+            token = jwt.sign(//генерим токен
+            {
+               sub: userID,//генерим токен
+            }, 'secret', {expiresIn: 3600});//генерим токен
+
+        //ПЕРЕСЫЛКА JWT НЕ РЕАЛИЗОВАННА
+        //ПЕРЕСЫЛКА JWT НЕ РЕАЛИЗОВАННА
+        //ПЕРЕСЫЛКА JWT НЕ РЕАЛИЗОВАННА
+            console.log('woila');//типа все хорошо
+            } else {
+        // response is OutgoingMessage object that server response http request
+            console.log('passwords dont match');//ПАРОЛИ НЕ СОВПАДАЮТ
+        // return response.json({success: false, message: 'passwords do not match'});
+        }
+    });
+
+    await knex('users').where('id','=',userID).update({JWT : token});//записываем токен в базу(НАДО ЛИ)
+
     next();
     }, (req, res) => {
-        res.redirect('/resourse/secret');
+        res.redirect('/resourse/secret');//как переслать ТОКЕН???????
         }
 );
 
