@@ -101,11 +101,12 @@ server.post('/login', async (req, res, next) => {
     let email;//хранить емэйл из базы
     let pass;//хранить пассворд хэш из базы
     let userID;//хранить юзерАЙДИ из базы
-    let token;
-    // if (!req.body.email || !req.body.password || !req.body.firstname){//проверка на корректность запроса
-    //     console.log('WRONG REQUEST');                                 //проверка на корректность запроса
-    //     return;                                                       //проверка на корректность запроса
-    // }                                                                 //проверка на корректность запроса
+    let token;//хранить токен из базы
+
+    // if (!req.body.email || !req.body.password || !req.body.username){  //проверка на корректность запроса
+    //     console.log('WRONG REQUEST');                                  //проверка на корректность запроса
+    //     return;                                                        //проверка на корректность запроса
+    // }                                                                  //проверка на корректность запроса
 
     await knex.from('users').where('email', '=', req.body.email)
     .then((user)=>
@@ -140,10 +141,11 @@ server.post('/login', async (req, res, next) => {
             console.log('passwords dont match');//ПАРОЛИ НЕ СОВПАДАЮТ
         // return response.json({success: false, message: 'passwords do not match'});
         }
+
+        if(token){
+            knex('users').where('id','=',userID).update({JWT : token});//записываем токен в базу(НАДО ЛИ)
+        }
     });
-
-    // await knex('users').where('id','=',userID).update({JWT : token});//записываем токен в базу(НАДО ЛИ)
-
     next();
     }, (req, res) => {
         res.redirect('/resourse/secret');//как переслать ТОКЕН???????
