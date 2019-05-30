@@ -74,9 +74,9 @@ server.post('/user/update', (req, res) => {
     knex('users').where('id','=',req.body.id)
         .update({firstname : req.body.fn, email: req.body.ln, password_hash : req.body.ph})
         .then((rows) => {
-                res.sendStatus(500);
-            }
-        ).catch((err) => { console.log( err); throw err });
+                res.sendStatus(200);
+                })
+        .catch((err) => { console.log( err); throw err });
 });
 
 ////ПОИСК ЮЗЕРА//////////
@@ -102,13 +102,17 @@ server.post('/login', async (req, res, next) => {
     let pass;//хранить пассворд хэш из базы
     let userID;//хранить юзерАЙДИ из базы
     let token;
+    // if (!req.body.email || !req.body.password || !req.body.firstname){//проверка на корректность запроса
+    //     console.log('WRONG REQUEST');                                 //проверка на корректность запроса
+    //     return;                                                       //проверка на корректность запроса
+    // }                                                                 //проверка на корректность запроса
 
     await knex.from('users').where('email', '=', req.body.email)
     .then((user)=>
      {
      email = user[0].email;//вытаскиваем емэйл из базы
      pass = user[0].password_hash;//вытаскиваем пассвордхэш из базы
-     userID = user[0].id;//вытаскиваем пассвордхэш из базы
+     userID = user[0].id;//вытаскиваем юзерайди из базы
      })
      .catch((err) => console.log(err));
 
@@ -138,7 +142,7 @@ server.post('/login', async (req, res, next) => {
         }
     });
 
-    await knex('users').where('id','=',userID).update({JWT : token});//записываем токен в базу(НАДО ЛИ)
+    // await knex('users').where('id','=',userID).update({JWT : token});//записываем токен в базу(НАДО ЛИ)
 
     next();
     }, (req, res) => {
