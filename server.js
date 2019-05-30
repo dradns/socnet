@@ -103,10 +103,10 @@ server.post('/login', async (req, res, next) => {
     let userID;//хранить юзерАЙДИ из базы
     let token;//хранить токен из базы
 
-    // if (!req.body.email || !req.body.password || !req.body.username){  //проверка на корректность запроса
-    //     console.log('WRONG REQUEST');                                  //проверка на корректность запроса
-    //     return;                                                        //проверка на корректность запроса
-    // }                                                                  //проверка на корректность запроса
+    if (!req.body.email || !req.body.password || !req.body.username){  //проверка на корректность запроса
+        console.log('WRONG REQUEST');                                  //проверка на корректность запроса
+        return;                                                        //проверка на корректность запроса
+    }                                                                  //проверка на корректность запроса
 
     await knex.from('users').where('email', '=', req.body.email)
     .then((user)=>
@@ -117,10 +117,10 @@ server.post('/login', async (req, res, next) => {
      })
      .catch((err) => console.log(err));
 
-    await console.log('global email ' + email);///дебажим
-    await console.log('global pass_hash ' + pass);///дебажим
-    await console.log('global USER ID ' + userID);///дебажим
-    await console.log('body pass ' +req.body.password);///дебажим
+    await console.log('email из базы ' + email);///дебажим
+    await console.log('pass_hash из базы ' + pass);///дебажим
+    await console.log('USER ID из базы ' + userID);///дебажим
+    await console.log('body pass из формы' +req.body.password);///дебажим
 
     await bcrypt.compare(req.body.password, pass, function(err, res) {//верифицируем пароли
         if (err){
@@ -138,7 +138,7 @@ server.post('/login', async (req, res, next) => {
             console.log('woila');//типа все хорошо
             } else {
         // response is OutgoingMessage object that server response http request
-            console.log('passwords dont match');//ПАРОЛИ НЕ СОВПАДАЮТ
+            console.log('passwords does not match');//ПАРОЛИ НЕ СОВПАДАЮТ
         // return response.json({success: false, message: 'passwords do not match'});
         }
 
@@ -151,5 +151,26 @@ server.post('/login', async (req, res, next) => {
         res.redirect('/resourse/secret');//как переслать ТОКЕН???????
         }
 );
+
+//EVENTS////
+//ADD///////
+server.post('/events/add', async (req, res) => {
+    console.log(req.body.name);
+    await knex.from('events').insert({title: req.body.name, description: req.body.description, date: req.body.date, author_id: 7})
+        .then((rows) => res.json(rows))
+        .catch((err) => { console.log( err); throw err });
+});
+
+//EVENTS////
+//UPDATE////
+server.post('/events/update', async (req, res) => {
+    console.log(req.body.id);
+    await knex.from('events').where('id','=',req.body.id)
+        .update({title: req.body.name, description: req.body.description, date: req.body.date, author_id: 7})
+        .then((rows) => res.json(rows))
+        .catch((err) => { console.log( err); throw err });
+});
+
+
 
 server.listen(PORT, ()=> {console.log(`server just starting on ${PORT} port`)});
