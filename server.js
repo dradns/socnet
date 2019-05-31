@@ -156,7 +156,7 @@ server.post('/login', async (req, res, next) => {
 //ADD///////
 server.post('/events/add', async (req, res) => {
     console.log(req.body.name);
-    await knex.from('events').insert({title: req.body.name, description: req.body.description, date: req.body.date, author_id: 7})
+    await knex.from('events').insert({title: req.body.name, description: req.body.description, date: req.body.date, author_id: req.body.user_id})
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 });
@@ -165,12 +165,20 @@ server.post('/events/add', async (req, res) => {
 //UPDATE////
 server.post('/events/update', async (req, res) => {
     console.log(req.body.id);
-    await knex.from('events').where('id','=',req.body.id)
-        .update({title: req.body.name, description: req.body.description, date: req.body.date, author_id: 7})
+    await knex.from('events').where('id','=',req.body.event_id)
+        .update({title: req.body.name, description: req.body.description, date: req.body.date, author_id: req.body.user_id})
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 });
 
-
+//EVENT////
+//JOIN/////
+server.post('/event/join', async (req, res) => {
+    await console.log('user_id    ' + req.body.user_id);
+    await console.log('event_id    ' + req.body.event_id);
+    await knex.from('events_members').insert({user_id: req.body.user_id, event_id: req.body.event_id})
+        .then((rows) => res.json(rows))
+        .catch((err) => { console.log( err); throw err });
+});
 
 server.listen(PORT, ()=> {console.log(`server just starting on ${PORT} port`)});
