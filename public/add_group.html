@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Group</title>
+</head>
+<body>
+
+<h1>Add Group</h1>
+
+<form action="/groups/add" method="post">
+    <input type="number" placeholder="your_ID" name="user_id">
+    <br>
+    <br>
+    <br>
+    <input type="text" placeholder="Название" name="name">
+    <input type="text" placeholder="Описание" name="description">
+    <br>
+    <br>
+    <label for="open">Open</label>
+    <input type="radio" name="is_open" id="open" value="open" checked>
+    <br>
+    <label for="closed">Closed</label>
+    <input type="radio" name="is_open" id="closed" value="closed">
+    <br>
+    <button>Submit</button>
+</form>
+</body>
+</html>

@@ -15,7 +15,5 @@ const dbknex = {
     }
 };
 
-
-
 module.exports = db;
 module.exports = dbknex;

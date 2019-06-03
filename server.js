@@ -11,6 +11,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const expressjwt = require('express-jwt');
 const cors = require('cors');
+const fetch = require("node-fetch");
 
 server.use(morgan('short'));
 server.use(express.static('./public'));
@@ -29,17 +30,19 @@ server.get('/', (req, res) => {
 });
 
 //test JWT
-server.get('/resourse', (req, res) => {
+server.get('/resource', (req, res) => {
     res
         .status(200)
-        .send('Public resourse');
+        .send('Public resource');
 });
 
 //test JWT
-server.get('/resourse/secret',jwtCheck, (req, res) => {
+server.get('/resource/secret',jwtCheck, (req, res) => {
    res
        .status(200)
        .send('Secret resource you should be login');
+    console.log('we are logined');
+    console.log('FROM PAGE TOKEN IS ' + res.headers);
 });
 
 
@@ -96,60 +99,119 @@ server.get('/users', (req, res) => {
         // });
 });
 
+// //LOGIN////
+// server.post('/login', async (req, res, next) => {
+//         let email;//хранить емэйл из базы
+//         let pass;//хранить пассворд хэш из базы
+//         let userID;//хранить юзерАЙДИ из базы
+//         let token;//хранить токен из базы
+//
+//         if (!req.body.email || !req.body.password || !req.body.username){  //проверка на корректность запроса
+//             console.log('WRONG REQUEST');                                  //проверка на корректность запроса
+//             return;                                                        //проверка на корректность запроса
+//         }                                                                  //проверка на корректность запроса
+//
+//         await knex.from('users').where('email', '=', req.body.email)
+//             .then((user)=>
+//             {
+//                 email = user[0].email;//вытаскиваем емэйл из базы
+//                 pass = user[0].password_hash;//вытаскиваем пассвордхэш из базы
+//                 userID = user[0].id;//вытаскиваем юзерайди из базы
+//             })
+//             .catch((err) => console.log(err));
+//
+//         await console.log('email из базы ' + email);///дебажим
+//         await console.log('pass_hash из базы ' + pass);///дебажим
+//         await console.log('USER ID из базы ' + userID);///дебажим
+//         await console.log('body pass из формы' +req.body.password);///дебажим
+//
+//         await bcrypt.compare(req.body.password, pass, function(err, res) {//верифицируем пароли
+//             if (err){
+//                 console.log('uuuuuups errror ' + err);
+//             }
+//             if (res){//если все хорошо генерим токен
+//                 token = jwt.sign(//генерим токен
+//                     {
+//                         sub: userID,//генерим токен
+//                     }, 'secret', {expiresIn: 3600});//генерим токен
+//
+//                 console.log(token);
+//                 //ПЕРЕСЫЛКА JWT НЕ РЕАЛИЗОВАННА
+//                 //ПЕРЕСЫЛКА JWT НЕ РЕАЛИЗОВАННА
+//                 //ПЕРЕСЫЛКА JWT НЕ РЕАЛИЗОВАННА
+//                 console.log('woila');//типа все хорошо
+//             } else {
+//                 // response is OutgoingMessage object that server response http request
+//                 console.log('passwords does not match');//ПАРОЛИ НЕ СОВПАДАЮТ
+//                 // return response.json({success: false, message: 'passwords do not match'});
+//             }
+//
+//             if(token){
+//                 knex('users').where('id','=',userID).update({JWT : token});//записываем токен в базу(НАДО ЛИ)
+//             }
+//         });
+//         next();
+//     }, (req, res) => {
+//         res.redirect('/resourse/secret');//как переслать ТОКЕН???????
+//     }
+// );
+
 //LOGIN////
-server.post('/login', async (req, res, next) => {
-    let email;//хранить емэйл из базы
-    let pass;//хранить пассворд хэш из базы
-    let userID;//хранить юзерАЙДИ из базы
-    let token;//хранить токен из базы
-
-    if (!req.body.email || !req.body.password || !req.body.username){  //проверка на корректность запроса
-        console.log('WRONG REQUEST');                                  //проверка на корректность запроса
-        return;                                                        //проверка на корректность запроса
-    }                                                                  //проверка на корректность запроса
-
-    await knex.from('users').where('email', '=', req.body.email)
-    .then((user)=>
-     {
-     email = user[0].email;//вытаскиваем емэйл из базы
-     pass = user[0].password_hash;//вытаскиваем пассвордхэш из базы
-     userID = user[0].id;//вытаскиваем юзерайди из базы
-     })
-     .catch((err) => console.log(err));
-
-    await console.log('email из базы ' + email);///дебажим
-    await console.log('pass_hash из базы ' + pass);///дебажим
-    await console.log('USER ID из базы ' + userID);///дебажим
-    await console.log('body pass из формы' +req.body.password);///дебажим
-
-    await bcrypt.compare(req.body.password, pass, function(err, res) {//верифицируем пароли
-        if (err){
-            console.log('uuuuuups errror ' + err);
-        }
-        if (res){//если все хорошо генерим токен
-            token = jwt.sign(//генерим токен
+server.post('/login', async (req, res) => {
+        let email;//хранить емэйл из базы
+        let pass;//хранить пассворд хэш из базы
+        let userID;//хранить юзерАЙДИ из базы
+        let token;//хранить токен из базы
+        if (!req.body.email || !req.body.password || !req.body.username){  //проверка на корректность запроса
+            console.log('WRONG REQUEST');                                  //проверка на корректность запроса
+            return;                                                        //проверка на корректность запроса
+        }                                                                  //проверка на корректность запроса
+        await knex.from('users').where('email', '=', req.body.email)
+            .then((user)=>
             {
-               sub: userID,//генерим токен
-            }, 'secret', {expiresIn: 3600});//генерим токен
+                email = user[0].email;//вытаскиваем емэйл из базы
+                pass = user[0].password_hash;//вытаскиваем пассвордхэш из базы
+                userID = user[0].id;//вытаскиваем юзерайди из базы
+            })
+            .catch((err) => console.log(err));
+        await console.log('email из базы ' + email + '\n ');///дебажим
+        await console.log('pass_hash из базы ' + pass  + '\n ');///дебажим
+        await console.log('USER ID из базы ' + userID  + '\n ');///дебажим
+        await console.log('body pass из формы ' +req.body.password  + '\n ');///дебажим
+        await bcrypt.compare(req.body.password, pass, function(err, res) {//верифицируем пароли
+            if (err){
+                console.log('uuuuuups errror ' + err);
+            }
+            if (res){//если все хорошо генерим токен
+                token = jwt.sign(//генерим токен
+                    {
+                        sub: userID,//генерим токен
+                    }, 'secret', {expiresIn: 360000});//генерим токен
 
-        //ПЕРЕСЫЛКА JWT НЕ РЕАЛИЗОВАННА
-        //ПЕРЕСЫЛКА JWT НЕ РЕАЛИЗОВАННА
-        //ПЕРЕСЫЛКА JWT НЕ РЕАЛИЗОВАННА
-            console.log('woila');//типа все хорошо
+                console.log('\nITS A OUR TOKEN\n' + token  + '\n ');
+                //ПЕРЕСЫЛКА JWT НЕ РЕАЛИЗОВАННА
+                //ПЕРЕСЫЛКА JWT НЕ РЕАЛИЗОВАННА
+                //ПЕРЕСЫЛКА JWT НЕ РЕАЛИЗОВАННА
+                console.log('woila'  + '\n ');//типа все хорошо
+                fetch('http://localhost:3020/resource/secret', {
+                    "headers": {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token ,
+                    }
+                }
+                ).then(res=>console.log(res));
             } else {
-        // response is OutgoingMessage object that server response http request
-            console.log('passwords does not match');//ПАРОЛИ НЕ СОВПАДАЮТ
-        // return response.json({success: false, message: 'passwords do not match'});
-        }
+                // response is OutgoingMessage object that server response http request
+                console.log('passwords does not match'  + '\n ');//ПАРОЛИ НЕ СОВПАДАЮТ
+                // return response.json({success: false, message: 'passwords do not match'});
+            }
 
-        if(token){
-            knex('users').where('id','=',userID).update({JWT : token});//записываем токен в базу(НАДО ЛИ)
-        }
-    });
-    next();
-    }, (req, res) => {
-        res.redirect('/resourse/secret');//как переслать ТОКЕН???????
-        }
+            if(token){
+                knex('users').where('id','=',userID).update({JWT : token});//записываем токен в базу(НАДО ЛИ)
+                console.log('token zapisan v bazu '  + '\n ');
+            }
+        });
+    }
 );
 
 //EVENTS////
@@ -174,11 +236,31 @@ server.post('/events/update', async (req, res) => {
 //EVENT////
 //JOIN/////
 server.post('/event/join', async (req, res) => {
-    await console.log('user_id    ' + req.body.user_id);
-    await console.log('event_id    ' + req.body.event_id);
     await knex.from('events_members').insert({user_id: req.body.user_id, event_id: req.body.event_id})
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 });
 
-server.listen(PORT, ()=> {console.log(`server just starting on ${PORT} port`)});
+//GROUPS////
+//ADD///////
+server.post('/groups/add', async (req, res) => {
+    let is_open = 1;
+    if (req.body.is_open === 'closed'){
+        is_open = 0;
+    }
+    await knex.from('groups').insert({name: req.body.name, description: req.body.description, is_open: is_open ,admin_id: req.body.user_id})
+        .then((rows) => res.json(rows))
+        .catch((err) => { console.log( err); throw err });
+});
+
+//GROUPS////
+//JOIN///////
+server.post('/group/join/', async (req, res) => {
+   console.log(req.body.group_id);
+   console.log(req.body.user_id);
+   await knex.from('groups_members').insert({group_id: req.body.group_id, user_id: req.body.user_id})
+       .then(rows => res.json(rows))
+       .catch(err => { console.log( err); throw err });
+});
+
+server.listen(PORT, ()=> {console.log(`server just starting on ${PORT} port`  + '\n ')});
