@@ -16,7 +16,7 @@ const multer = require('multer');
 
 let storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'uploads/')
+        cb(null, 'uploads')
     },
     filename: function (req, file, cb) {
         cb(null, 'ZDES_BUDET_USER_ID' + file.originalname)
@@ -27,6 +27,7 @@ const upload = multer({storage: storage });
 
 server.use(morgan('short'));
 server.use(express.static('./public'));
+server.use(express.static('./uploads'));
 server.use(bodyParser.urlencoded({extended: false}));
 server.use(cors());//библиотека CORS
 
@@ -70,8 +71,9 @@ server.get('/users/:id', (req, res) => {
 ////РЕГИСТРАЦИЯ ЮЗЕРА/////
 server.post('/registration', upload.single('userpic'), async (req, res) => {
     if (req.file){
+        console.log(req.file);
         await knex.from('users').where('id','=', req.body.id)
-            .update({avatar: req.file.path})
+            .update({avatar: req.file.filename})
             .then((rows) => res.json(rows))
             .catch((err) => { console.log( err); throw err });
     }else{
