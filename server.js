@@ -213,7 +213,15 @@ server.post('/events/list', async (req, res) => {
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 
-    await knex.from('events_members').where('user_id','=', req.body.id)
+    await knex.from('events_members').where('user_id','=', req.body.id)////DOES NOT WORK
+        .then((rows) => res.json(rows))////DOES NOT WORK
+        .catch((err) => { console.log( err); throw err });////DOES NOT WORK
+});
+
+//EVENTS////
+//ONE///////
+server.post('/event/one', async (req, res) => {
+    await knex.from('events').where('id','=', req.body.group_id)
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 });
@@ -245,5 +253,20 @@ server.post('/group/join/', async (req, res) => {
        .catch(err => { console.log( err); throw err });
 });
 
+//GROUPS////
+//LIST//////
+server.post('/groups/list', async (req, res) => {
+    await knex.from('groups').where('admin_id','=', req.body.id)
+        .then((rows) => res.json(rows))
+        .catch((err) => { console.log( err); throw err });
+});
+
+//GROUPS////
+//ONE///////
+server.post('/group/one', async (req, res) => {
+    await knex.from('groups').where('id','=', req.body.group_id)
+        .then((rows) => res.json(rows))
+        .catch((err) => { console.log( err); throw err });
+});
 
 server.listen(PORT, ()=> {console.log(`server just starting on ${PORT} port`  + '\n ')});
