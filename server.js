@@ -19,11 +19,9 @@ let storage = multer.diskStorage({
         cb(null, 'uploads/')
     },
     filename: function (req, file, cb) {
-        cb(null, 'ZDES BUDET USER_ID - ' + file.originalname)
+        cb(null, 'ZDES_BUDET_USER_ID' + file.originalname)
     }
 });
-
-// const upload = multer({dest: 'uploads/' });
 
 const upload = multer({storage: storage });
 
@@ -31,8 +29,6 @@ server.use(morgan('short'));
 server.use(express.static('./public'));
 server.use(bodyParser.urlencoded({extended: false}));
 server.use(cors());//библиотека CORS
-
-
 
 const jwtCheck = expressjwt({secret: 'secret'});//middleware for jwt
 
@@ -45,14 +41,16 @@ server.get('/', (req, res) => {
     res.send('hello from ROOT');
 });
 
-//test JWT
+////test JWT////
+////////////////
 server.get('/resource', (req, res) => {
     res
         .status(200)
         .send('Public resource');
 });
 
-//test JWT
+//////test JWT////////
+//////////////////////
 server.get('/resource/secret',jwtCheck, (req, res) => {
    res
        .status(200)
@@ -69,23 +67,29 @@ server.get('/users/:id', (req, res) => {
         .catch((err) => { console.log( err); throw err });
 });
 
-////ДОБАВЛЕНИЕ ЮЗЕРА/////
+////РЕГИСТРАЦИЯ ЮЗЕРА/////
 server.post('/registration', upload.single('userpic'), async (req, res) => {
-    console.log(req.file);
-    let check;//проверка на присутствие данного ящика в базе
-    await knex.from('users').where('email', '=', req.body.email)
-        .then((user)=>{check = user.length; console.log(check)})//проверка осуществляется путем нахождения длины массива
-        .catch((err) => console.log(err));
-    if (check > 0){///проверка на присутствие данного ящика
-        console.log('user already exist');
+    if (req.file){
+        await knex.from('users').where('id','=', req.body.id)
+            .update({avatar: req.file.path})
+            .then((rows) => res.json(rows))
+            .catch((err) => { console.log( err); throw err });
     }else{
-        const salt = await bcrypt.genSalt(10);//хэшируем пароль
-        const ph = await bcrypt.hash(req.body.ph, salt);//хэшируем пароль
-        await knex('users').insert({firstname : req.body.fn, email: req.body.email, password_hash : ph})
-        .then( () => {knex('users').where('email', '=', req.body.email)
-        .then(async (user)=> {console.log(user[0].id)});})
-        .then((rows) => {res.sendStatus(200);})
-        .catch((err) => { console.log( err); throw err });
+        let check;//проверка на присутствие данного ящика в базе
+        await knex.from('users').where('email', '=', req.body.email)
+            .then((user)=>{check = user.length; console.log(check)})//проверка осуществляется путем нахождения длины массива
+            .catch((err) => console.log(err));
+        if (check > 0){///проверка на присутствие данного ящика
+            console.log('user already exist');
+        }else{
+            const salt = await bcrypt.genSalt(10);//хэшируем пароль
+            const ph = await bcrypt.hash(req.body.ph, salt);//хэшируем пароль
+            await knex('users').insert({firstname : req.body.fn, email: req.body.email, password_hash : ph})
+                .then( () => {knex('users').where('email', '=', req.body.email)
+                    .then(async (user)=> {console.log(user[0].id)});})
+                .then((rows) => {res.sendStatus(200);})
+                .catch((err) => { console.log( err); throw err });
+        }
     }
 });
 
@@ -106,7 +110,7 @@ server.get('/users/find/:fn', (req, res) => {
         .catch((err) => { console.log( err); throw err });
 });
 
-////ОБЩИЙ СПИСОК ЮЗЕРОВ//
+////ОБЩИЙ СПИСОК ЮЗЕРОВ//////
 server.get('/users', (req, res) => {
     knex.from('users').select("*")
         .then((rows) => {res.json(rows);})
@@ -116,7 +120,7 @@ server.get('/users', (req, res) => {
         // });
 });
 
-//LOGIN////
+//////LOGIN////
 server.post('/login', async (req, res) => {
         let email;//хранить емэйл из базы
         let pass;//хранить пассворд хэш из базы
@@ -261,8 +265,8 @@ server.post('/groups/list', async (req, res) => {
         .catch((err) => { console.log( err); throw err });
 });
 
-//GROUPS////
-//ONE///////
+//////GROUPS////
+//////ONE///////
 server.post('/group/one', async (req, res) => {
     await knex.from('groups').where('id','=', req.body.group_id)
         .then((rows) => res.json(rows))
