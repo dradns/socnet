@@ -241,8 +241,9 @@ server.post('/event/join', async (req, res) => {
 // });
 
 server.get('/events/list', async (req, res) => {
-    var y = 4;
-    await knex.from('events').where('author_id','=', y)
+    // var y = 4;
+    await knex.from('events')
+        // .where('author_id','=', y)
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 
@@ -266,8 +267,9 @@ server.post('/groups/add', async (req, res) => {
     if (req.body.is_open === 'closed'){
         is_open = 0;
     }
-    await knex.from('groups').insert({name: req.body.name, description: req.body.description, is_open: is_open ,admin_id: req.body.user_id})
-        .then((rows) => res.json(rows))
+    console.log(req.body);
+    await knex.from('groups').insert({name: req.body.name, description: req.body.description, is_open: is_open ,admin_id: parseInt(req.body.user_id)})
+        .then((rows) => res.sendStatus(200))
         .catch((err) => { console.log( err); throw err });
 });
 
@@ -287,8 +289,9 @@ server.post('/group/join/', async (req, res) => {
 //         .catch((err) => { console.log( err); throw err });
 // });
 server.get('/groups/list', async (req, res) => {
-    var x = 7;
-    await knex.from('groups').where('admin_id','=', x)
+    // var x = 7;
+    await knex.from('groups')
+        // .where('admin_id','=', x)
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 });
@@ -296,8 +299,9 @@ server.get('/groups/list', async (req, res) => {
 
 //////GROUPS////
 //////ONE///////
-server.get('/group/one', async (req, res) => {
-    await knex.from('groups').where('id','=', req.param.group_id)
+server.get('/groups/:group_id', async (req, res) => {
+    console.log(req.params);
+    await knex.from('groups').where('id','=', req.params.group_id)
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 });
