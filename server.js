@@ -201,7 +201,10 @@ server.post('/login', async (req, res) => {
 //ADD///////
 server.post('/events/add', async (req, res) => {
     console.log(req.body.name);
-    await knex.from('events').insert({title: req.body.name, description: req.body.description, date: req.body.date, author_id: req.body.user_id})
+    console.log(req.body.date_creation);
+    await knex.from('events').insert({title: req.body.name, description: req.body.description,
+        date_creation: req.body.date_creation, date_exe: req.body.date_exe, duration: req.body.duration,
+        author_id: req.body.user_id})
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 });
@@ -209,9 +212,10 @@ server.post('/events/add', async (req, res) => {
 //EVENTS////
 //UPDATE////
 server.post('/events/update', async (req, res) => {
-    console.log(req.body.id);
+    console.log(req.body.date_creation);
     await knex.from('events').where('id','=',req.body.event_id)
-        .update({title: req.body.name, description: req.body.description, date: req.body.date, author_id: req.body.user_id})
+        .update({title: req.body.name, description: req.body.description, date_creation: req.body.date_creation,
+            date_exe: req.body.date_exe, duration: req.body.duration , author_id: req.body.user_id})
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 });
@@ -265,18 +269,11 @@ server.post('/groups/add', async (req, res) => {
     await knex.from('groups').insert({name: req.body.name, description: req.body.description, is_open: is_open ,admin_id: req.body.user_id})
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
-
-    await knex.from('groups').insert({name: req.body.name, description: req.body.description, is_open: is_open ,admin_id: req.body.user_id})
-        .then((rows) => res.json(rows))
-        .catch((err) => { console.log( err); throw err });
-
 });
 
 //GROUPS////
 //JOIN///////
 server.post('/group/join/', async (req, res) => {
-   console.log(req.body.group_id);
-   console.log(req.body.user_id);
    await knex.from('groups_members').insert({group_id: req.body.group_id, user_id: req.body.user_id})
        .then(rows => res.json(rows))
        .catch(err => { console.log( err); throw err });
