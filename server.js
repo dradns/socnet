@@ -247,15 +247,15 @@ server.get('/events/list', async (req, res) => {
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 
-    await knex.from('events_members').where('user_id','=', y)////DOES NOT WORK
+    await knex.from('events_members').where('user_id','=', y)
         .then((rows) => res.json(rows))////DOES NOT WORK
-        .catch((err) => { console.log( err); throw err });////DOES NOT WORK
+        .catch((err) => { console.log( err); throw err });
 });
 
 //EVENTS////
 //ONE///////
-server.post('/event/one', async (req, res) => {
-    await knex.from('events').where('id','=', req.body.group_id)
+server.get('/events/:event_id', async (req, res) => {
+    await knex.from('events').where('id','=', req.params.event_id)
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 });
