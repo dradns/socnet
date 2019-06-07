@@ -113,12 +113,13 @@ server.post('/registration', upload.single('userpic'), async (req, res) => {
 
 ////ОБНОВЛЕНИЕ ЮЗЕРА/////
 server.post('/user/update', (req, res) => {
-    knex('users').where('id','=',req.body.id)
-        .update({firstname : req.body.fn, email: req.body.ln, password_hash : req.body.ph})
+    console.log(req.body);
+    knex('users').where('id','=', req.body.id)
+        .update({firstname: req.body.firstname, email: req.body.email, password_hash: req.body.password_hash})
         .then((rows) => {
                 res.sendStatus(200);
                 })
-        .catch((err) => { console.log( err); throw err });
+        .catch((err) => { console.log( err); res.send(err) });
 });
 
 ////ПОИСК ЮЗЕРА//////////
