@@ -248,9 +248,9 @@ server.get('/events/list', async (req, res) => {
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 
-    await knex.from('events_members').where('user_id','=', y)
-        .then((rows) => res.json(rows))////DOES NOT WORK
-        .catch((err) => { console.log( err); throw err });
+    // await knex.from('events_members').where('user_id','=', y)
+    //     .then((rows) => res.json(rows))////DOES NOT WORK
+    //     .catch((err) => { console.log( err); throw err });
 });
 
 //EVENTS////
