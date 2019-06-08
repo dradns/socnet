@@ -203,7 +203,7 @@ server.post('/events/update', async (req, res) => {
     console.log(req.body.date_creation);
     await knex.from('events').where('id','=',req.body.event_id)
         .update({title: req.body.name, description: req.body.description, date_creation: req.body.date_creation,
-            date_exe: req.body.date_exe, duration: req.body.duration , author_id: req.body.user_id})
+         date_exe: req.body.date_exe, duration: req.body.duration , author_id: req.body.user_id})
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 });
