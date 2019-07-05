@@ -204,14 +204,22 @@ server.post('/login', async (req, res) => {
 //EVENTS////
 //ADD///////
 server.post('/events/add', async (req, res) => {
+//<<<<<<< HEAD
     console.log(req.body);
     await knex.from('events').insert({title: req.body.title, description: req.body.description,
        // date_creation: req.body.date_creation,
         date_exe: req.body.date_exe,
         duration: req.body.duration,
-        author_id: req.body.user_id})
-        .then((rows) => res.json(rows))
-        .catch((err) => { console.log( err); throw err });
+=======
+    console.log(req.body.title);
+    console.log(req.body.date_creation);
+    await knex.from('events').insert({title: req.body.title, description: req.body.description,
+        // date_creation: req.body.date_creation,
+        date_exe: req.body.date_exe, duration: req.body.duration,
+//>>>>>>> a1249dd85c825818ef49586ad8acebba108fcdf1
+  //      author_id: req.body.user_id})
+    //    .then((rows) => res.json(rows))
+      //  .catch((err) => { console.log( err); throw err });
 });
 
 //EVENTS////
@@ -220,7 +228,7 @@ server.post('/events/update', async (req, res) => {
     console.log(req.body.date_creation);
     await knex.from('events').where('id','=',req.body.event_id)
         .update({title: req.body.name, description: req.body.description, date_creation: req.body.date_creation,
-            date_exe: req.body.date_exe, duration: req.body.duration , author_id: req.body.user_id})
+         date_exe: req.body.date_exe, duration: req.body.duration , author_id: req.body.user_id})
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 });
@@ -246,9 +254,10 @@ server.post('/event/join', async (req, res) => {
 // });
 
 server.get('/events/list', async (req, res) => {
-    // // var y = 4;
+//<<<<<<< HEAD
+     var y = 4;
      await knex.from('events')
-         // .where('author_id','=', y)
+          .where('author_id','=', y)
          .then((rows) => res.json(rows))
          .catch((err) => { console.log( err); throw err });
 
@@ -256,12 +265,28 @@ server.get('/events/list', async (req, res) => {
     //     // .where('user_id','=', y)////DOES NOT WORK
     //     .then((rows) => res.json(rows))////DOES NOT WORK
     //     .catch((err) => { console.log( err); throw err });////DOES NOT WORK
+//=======
+    // var y = 4;
+   // await knex.from('events')
+     //    .where('author_id','=', y)
+       // .then((rows) => res.json(rows))
+      //  .catch((err) => { console.log( err); throw err });
+
+    // await knex.from('events_members').where('user_id','=', y)
+    //     .then((rows) => res.json(rows))////DOES NOT WORK
+    //     .catch((err) => { console.log( err); throw err });
+//>>>>>>> a1249dd85c825818ef49586ad8acebba108fcdf1
 });
 
 //EVENTS////
 //ONE///////
-server.get('/events/:id', async (req, res) => {
-    await knex.from('events').where('id','=', req.params.id)
+//<<<<<<< HEAD
+//server.get('/events/:id', async (req, res) => {
+  //  await knex.from('events').where('id','=', req.params.id)
+//=======
+server.get('/events/:event_id', async (req, res) => {
+    await knex.from('events').where('id','=', req.params.event_id)
+///>>>>>>> a1249dd85c825818ef49586ad8acebba108fcdf1
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 });
