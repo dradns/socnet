@@ -145,6 +145,7 @@ server.post('/login', async (req, res) => {
         let pass;//хранить пассворд хэш из базы
         let userID;//хранить юзерАЙДИ из базы
         let token;//хранить токен из базы
+        let firstname;
 
         if (!req.body.email || !req.body.password){  //проверка на корректность запроса
             console.log('WRONG REQUEST');                                  //проверка на корректность запроса
@@ -156,6 +157,7 @@ server.post('/login', async (req, res) => {
                 email = user[0].email;//вытаскиваем емэйл из базы
                 pass = user[0].password_hash;//вытаскиваем пассвордхэш из базы
                 userID = user[0].id;//вытаскиваем юзерайди из базы
+                firstname = user[0].firstname;
             })
             .catch((err) => console.log(err));
         // await console.log('email из базы ' + email + '\n ');///дебажим
@@ -170,7 +172,8 @@ server.post('/login', async (req, res) => {
                 //если все хорошо генерим токен
                 token = jwt.sign(//генерим токен
                     {
-                        userID: userID,//генерим токен
+                        userID: userID,
+                        name: firstname, //генерим токен
                     }, 'secret', {expiresIn: 3600});//генерим токен
                 res.send({token: token});
 
@@ -201,10 +204,11 @@ server.post('/login', async (req, res) => {
 //EVENTS////
 //ADD///////
 server.post('/events/add', async (req, res) => {
-    console.log(req.body.name);
-    console.log(req.body.date_creation);
-    await knex.from('events').insert({title: req.body.name, description: req.body.description,
-        date_creation: req.body.date_creation, date_exe: req.body.date_exe, duration: req.body.duration,
+    console.log(req.body);
+    await knex.from('events').insert({title: req.body.title, description: req.body.description,
+       // date_creation: req.body.date_creation,
+        date_exe: req.body.date_exe,
+        duration: req.body.duration,
         author_id: req.body.user_id})
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
@@ -242,21 +246,22 @@ server.post('/event/join', async (req, res) => {
 // });
 
 server.get('/events/list', async (req, res) => {
-    // var y = 4;
-    await knex.from('events')
-        // .where('author_id','=', y)
-        .then((rows) => res.json(rows))
-        .catch((err) => { console.log( err); throw err });
+    // // var y = 4;
+     await knex.from('events')
+         // .where('author_id','=', y)
+         .then((rows) => res.json(rows))
+         .catch((err) => { console.log( err); throw err });
 
-    await knex.from('events_members').where('user_id','=', y)////DOES NOT WORK
-        .then((rows) => res.json(rows))////DOES NOT WORK
-        .catch((err) => { console.log( err); throw err });////DOES NOT WORK
+    // await knex.from('events_members')
+    //     // .where('user_id','=', y)////DOES NOT WORK
+    //     .then((rows) => res.json(rows))////DOES NOT WORK
+    //     .catch((err) => { console.log( err); throw err });////DOES NOT WORK
 });
 
 //EVENTS////
 //ONE///////
-server.post('/event/one', async (req, res) => {
-    await knex.from('events').where('id','=', req.body.group_id)
+server.get('/events/:id', async (req, res) => {
+    await knex.from('events').where('id','=', req.params.id)
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 });
