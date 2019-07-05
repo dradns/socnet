@@ -71,19 +71,19 @@ server.get('/users/:id', (req, res) => {
 ////РЕГИСТРАЦИЯ ЮЗЕРА/////
 server.post('/registration', upload.single('userpic'), async (req, res) => {
     if (req.file){
-        console.log(req.file);
+//        console.log(req.file);
         await knex.from('users').where('id','=', req.body.id)
             .update({avatar: req.file.filename})
             .then((rows) => res.json(rows))
             .catch((err) => { console.log( err); throw err });
     }else{
         let check;//проверка на присутствие данного ящика в базе
-        console.log(req.body);
+  //      console.log(req.body);
         await knex.from('users').where('email', '=', req.body.email)
             .then((user)=>{check = user.length; console.log(check)})//проверка осуществляется путем нахождения длины массива
             .catch((err) => console.log(err));
         if (check > 0){///проверка на присутствие данного ящика
-            console.log('user already exist');
+    //        console.log('user already exist');
         }else{
             const salt = await bcrypt.genSalt(10);//хэшируем пароль
             const ph = await bcrypt.hash(req.body.ph, salt);//хэшируем пароль
@@ -113,7 +113,7 @@ server.post('/registration', upload.single('userpic'), async (req, res) => {
 
 ////ОБНОВЛЕНИЕ ЮЗЕРА/////
 server.post('/user/update', (req, res) => {
-    console.log(req.body);
+//    console.log(req.body);
     knex('users').where('id','=', req.body.id)
         .update({firstname: req.body.firstname, email: req.body.email, password_hash: req.body.password_hash})
         .then((rows) => {
@@ -166,7 +166,7 @@ server.post('/login', async (req, res) => {
         // await console.log('body pass из формы ' +req.body.password  + '\n ');///дебажим
        await bcrypt.compare(req.body.password, pass, (err, resp) => {//верифицируем пароли
             if (err){
-                console.log('uuuuuups errror ' + err);
+  //              console.log('uuuuuups errror ' + err);
             }
             if (resp){
                 //если все хорошо генерим токен
@@ -206,21 +206,24 @@ server.post('/login', async (req, res) => {
 server.post('/events/add', async (req, res) => {
 //<<<<<<< HEAD
     console.log(req.body);
-    await knex.from('events').insert({title: req.body.title, description: req.body.description,
-       // date_creation: req.body.date_creation,
+    await knex.from('events').insert({
+        title: req.body.title, description: req.body.description,
+        // date_creation: req.body.date_creation,
         date_exe: req.body.date_exe,
-        duration: req.body.duration,
-=======
-    console.log(req.body.title);
+        duration: req.body.duration});
+        console.log(req.body.title);
     console.log(req.body.date_creation);
-    await knex.from('events').insert({title: req.body.title, description: req.body.description,
+    await knex.from('events').insert({
+        title: req.body.title, description: req.body.description,
         // date_creation: req.body.date_creation,
         date_exe: req.body.date_exe, duration: req.body.duration,
 //>>>>>>> a1249dd85c825818ef49586ad8acebba108fcdf1
-  //      author_id: req.body.user_id})
-    //    .then((rows) => res.json(rows))
-      //  .catch((err) => { console.log( err); throw err });
+        //      author_id: req.body.user_id})
+        //    .then((rows) => res.json(rows))
+        //  .catch((err) => { console.log( err); throw err });
+    })
 });
+
 
 //EVENTS////
 //UPDATE////
@@ -255,14 +258,14 @@ server.post('/event/join', async (req, res) => {
 
 server.get('/events/list', async (req, res) => {
 //<<<<<<< HEAD
-     var y = 4;
+//      var y = 4;
      await knex.from('events')
-          .where('author_id','=', y)
+          // .where('author_id','=', y)
          .then((rows) => res.json(rows))
          .catch((err) => { console.log( err); throw err });
 
     // await knex.from('events_members')
-    //     // .where('user_id','=', y)////DOES NOT WORK
+    //     .where('user_id','=', y)////DOES NOT WORK
     //     .then((rows) => res.json(rows))////DOES NOT WORK
     //     .catch((err) => { console.log( err); throw err });////DOES NOT WORK
 //=======
