@@ -210,18 +210,21 @@ server.post('/events/add', async (req, res) => {
         title: req.body.title, description: req.body.description,
         // date_creation: req.body.date_creation,
         date_exe: req.body.date_exe,
-        duration: req.body.duration});
+        duration: req.body.duration})
+        .then( () => {
+            res.sendStatus(200)
+        });
         console.log(req.body.title);
     console.log(req.body.date_creation);
-    await knex.from('events').insert({
-        title: req.body.title, description: req.body.description,
-        // date_creation: req.body.date_creation,
-        date_exe: req.body.date_exe, duration: req.body.duration,
+    // await knex.from('events').insert({
+    //     title: req.body.title, description: req.body.description,
+    //     // date_creation: req.body.date_creation,
+    //     date_exe: req.body.date_exe, duration: req.body.duration,
 //>>>>>>> a1249dd85c825818ef49586ad8acebba108fcdf1
         //      author_id: req.body.user_id})
         //    .then((rows) => res.json(rows))
         //  .catch((err) => { console.log( err); throw err });
-    })
+    // })
 });
 
 
