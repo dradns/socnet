@@ -13,6 +13,7 @@ const expressjwt = require('express-jwt');
 const cors = require('cors');
 const fetch = require("node-fetch");
 const multer = require('multer');
+const jwtDecode = require('jwt-decode');
 
 let storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -56,8 +57,6 @@ server.get('/resource/secret',jwtCheck, (req, res) => {
    res
        .status(200)
        .send('Secret resource you should be login');
-    console.log('we are logined');
-    console.log('FROM PAGE TOKEN IS ' + res.headers);
 });
 
 
@@ -174,8 +173,10 @@ server.post('/login', async (req, res) => {
                     {
                         userID: userID,
                         name: firstname, //генерим токен
-                    }, 'secret', {expiresIn: 3600});//генерим токен
-                res.send({token: token});
+                    }, 'secret', {expiresIn: "3 hours"});//генерим токен
+                res
+                  .status(200)
+                  .send({token: token});
 
                  // console.log('its ok pass');
 
@@ -210,18 +211,19 @@ server.post('/events/add', async (req, res) => {
         title: req.body.title, description: req.body.description,
         // date_creation: req.body.date_creation,
         date_exe: req.body.date_exe,
-        duration: req.body.duration});
+        duration: req.body.duration}).then(() => {
+res.sendStatus(200)}).catch((err) => {console.log(err)});
         console.log(req.body.title);
-    console.log(req.body.date_creation);
-    await knex.from('events').insert({
-        title: req.body.title, description: req.body.description,
+//    console.log(req.body.date_creation);
+//    await knex.from('events').insert({
+  //      title: req.body.title, description: req.body.description,
         // date_creation: req.body.date_creation,
-        date_exe: req.body.date_exe, duration: req.body.duration,
+    //    date_exe: req.body.date_exe, duration: req.body.duration,
 //>>>>>>> a1249dd85c825818ef49586ad8acebba108fcdf1
         //      author_id: req.body.user_id})
-        //    .then((rows) => res.json(rows))
-        //  .catch((err) => { console.log( err); throw err });
-    })
+//            .then((rows) => res.sendStatus(200))
+  //        .catch((err) => { console.log( err); throw err });
+   // })
 });
 
 
@@ -323,10 +325,23 @@ server.post('/group/join/', async (req, res) => {
 //         .catch((err) => { console.log( err); throw err });
 // });
 server.get('/groups/list', async (req, res) => {
-    // var x = 7;
+    let requestArray = [];
+    let responseArray = [];
+    let subscribed = [];
     await knex.from('groups')
-        // .where('admin_id','=', x)
-        .then((rows) => res.json(rows))
+        .then(async (rows) => {
+          requestArray = rows;
+          await knex.from('groups_members').where('user_id', '=', jwtDecode(req.headers.authorization.slice(7)).userID)
+            .then(rows => subscribed = rows )
+            .catch((err) => { console.log( err); throw err });
+          responseArray = requestArray.map(item => {
+            let newitem = {};
+              Object.assign(newitem, item);
+              newitem.isSubscribed = subscribed.some((some) => some.group_id === item.id);
+              return newitem;
+          });
+          res.json(responseArray);
+        })
         .catch((err) => { console.log( err); throw err });
 });
 
@@ -334,9 +349,36 @@ server.get('/groups/list', async (req, res) => {
 //////GROUPS////
 //////ONE///////
 server.get('/groups/:group_id', async (req, res) => {
-    console.log(req.params);
+  let response = {};
+  let subscribed = [];
+  let subscribers = [];
+  let posts = [];
     await knex.from('groups').where('id','=', req.params.group_id)
-        .then((rows) => res.json(rows))
+        .then(async (rows) => {
+          await knex.from('groups_members').where('user_id', '=', jwtDecode(req.headers.authorization.slice(7)).userID)
+            .then(rows => subscribed = rows )
+            .catch((err) => { console.log( err); throw err });
+          Object.assign(response, rows[0]);
+          response.isSubscribed = subscribed.some((some) => some.group_id === rows[0].id);
+          subscribers = await knex.from('groups_members').where('group_id', '=', req.params.group_id)
+            .map(item => item.user_id);
+            await knex.from('posts_in_groups').where('group_id', '=', req.params.group_id)
+              .then( async (rows) => {
+                let newPost = {};
+                let likedPosts = await knex.from('likes_to_posts').where('author_id', '=', jwtDecode(req.headers.authorization.slice(7)).userID);
+                posts = rows.map(item => {
+                  Object.assign(newPost, item);
+                  newPost.isLiked = !!likedPosts.some((some) => some.post_id === item.id);
+                  return newPost;
+                })
+              })
+
+              .catch((err) => { console.log( err); throw err });
+          response.subscribers = subscribers;
+          response.subCounter = subscribers.length;
+          response.posts = posts;
+          res.json(response)
+        })
         .catch((err) => { console.log( err); throw err });
 });
 
