@@ -329,8 +329,8 @@ server.post('/groups/add', async (req, res) => {
 
 //GROUPS////
 //JOIN///////
-server.post('/group/join/', async (req, res) => {
-   await knex.from('groups_members').insert({group_id: req.body.group_id, user_id: req.body.user_id})
+server.post('/group/join/:group_id', async (req, res) => {
+   await knex.from('groups_members').insert({group_id: req.params.group_id, user_id: jwtDecode(req.headers.authorization.slice(7)).userID})
        .then(rows => res.json(rows))
        .catch(err => { console.log( err); throw err });
 });
@@ -371,6 +371,7 @@ server.get('/groups/:group_id', async (req, res) => {
   let subscribed = [];
   let subscribers = [];
   let posts = [];
+    let likesCounter = [];
     await knex.from('groups').where('id','=', req.params.group_id)
         .then(async (rows) => {
           await knex.from('groups_members').where('user_id', '=', jwtDecode(req.headers.authorization.slice(7)).userID)
@@ -382,13 +383,15 @@ server.get('/groups/:group_id', async (req, res) => {
             .map(item => item.user_id);
             await knex.from('posts_in_groups').where('group_id', '=', req.params.group_id)
               .then( async (rows) => {
-                let newPost = {};
                 let likedPosts = await knex.from('likes_to_posts').where('author_id', '=', jwtDecode(req.headers.authorization.slice(7)).userID);
-                posts = rows.map(item => {
-                  Object.assign(newPost, item);
-                  newPost.isLiked = !!likedPosts.some((some) => some.post_id === item.id);
+                 likesCounter =  await knex.from('likes_to_posts');
+                posts = await rows.map(item => {
+                    let newPost = {};
+                     Object.assign(newPost, item);
+                    newPost.likesCounter = likesCounter.filter( fil => fil.post_id === item.id).length;
+                    newPost.isLiked = !!likedPosts.some((some) => some.post_id === item.id);
                   return newPost;
-                })
+                });
               })
 
               .catch((err) => { console.log( err); throw err });
@@ -397,6 +400,44 @@ server.get('/groups/:group_id', async (req, res) => {
           response.posts = posts;
           res.json(response)
         })
+        .catch((err) => { console.log( err); throw err });
+});
+
+server.get('/test', async (req, res) => {
+        // await knex.from('likes_to_posts').then(rows => res.json(rows)).catch((err) => { console.log( err); throw err });
+     await knex.from('posts_in_groups').then(rows => res.json(rows)).catch((err) => { console.log( err); throw err });
+});
+
+server.get('/feed', async (req, res) => {
+    // await knex.from('likes_to_posts').then(rows => res.json(rows)).catch((err) => { console.log( err); throw err });
+    await knex.from('groups_members').where('user_id', '=', jwtDecode(req.headers.authorization.slice(7)).userID).then(async (rows) => {
+        await knex.from('posts_in_groups')
+    }).catch((err) => { console.log( err); throw err });
+});
+
+server.post('/groups/:group_id', async (req, res) => {
+   await knex.from('posts_in_groups').insert({
+       group_id: req.params.group_id,
+       post: req.body.post,
+       date: new Date(),
+       author_id: jwtDecode(req.headers.authorization.slice(7)).userID })
+       .then((rows) => res.sendStatus(200))
+       .catch((err) => { console.log( err); throw err });
+});
+
+server.post('/posts/:post_id', async (req, res) => {
+    await knex.from('likes_to_posts').insert({
+        post_id: req.params.post_id,
+        author_id: jwtDecode(req.headers.authorization.slice(7)).userID })
+        .then((rows) => res.sendStatus(200))
+        .catch((err) => { console.log( err); throw err });
+});
+
+server.delete('/posts/:post_id', async (req, res) => {
+    await knex.from('likes_to_posts').delete().where({
+        post_id: req.params.post_id,
+        author_id: jwtDecode(req.headers.authorization.slice(7)).userID })
+        .then((rows) => res.sendStatus(200))
         .catch((err) => { console.log( err); throw err });
 });
 
