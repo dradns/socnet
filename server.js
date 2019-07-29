@@ -334,6 +334,12 @@ server.post('/group/join/:group_id', async (req, res) => {
        .then(rows => res.json(rows))
        .catch(err => { console.log( err); throw err });
 });
+//ПОКИНУТЬ ГРУППУ
+server.delete('/group/join/:group_id', async (req, res) => {
+  await knex.from('groups_members').delete().where({group_id: req.params.group_id, user_id: jwtDecode(req.headers.authorization.slice(7)).userID})
+    .then(rows => res.json(rows))
+    .catch(err => { console.log( err); throw err });
+});
 
 //GROUPS////
 //LIST//////
@@ -346,6 +352,8 @@ server.get('/groups/list', async (req, res) => {
     let requestArray = [];
     let responseArray = [];
     let subscribed = [];
+    let members = await knex.from('groups_members');
+      // .then(rows => rows.map(item => item.user_id));
     await knex.from('groups')
         .then(async (rows) => {
           requestArray = rows;
@@ -355,7 +363,9 @@ server.get('/groups/list', async (req, res) => {
           responseArray = requestArray.map(item => {
             let newitem = {};
               Object.assign(newitem, item);
+
               newitem.isSubscribed = subscribed.some((some) => some.group_id === item.id);
+              newitem.members = members.filter(memb => memb.group_id === item.id).map((item) => item.user_id).length;
               return newitem;
           });
           res.json(responseArray);
@@ -411,6 +421,7 @@ server.get('/groups/:group_id', async (req, res) => {
 
 //добавить пост в группу
 server.post('/groups/:group_id', async (req, res) => {
+  console.log(req.body.post);
    await knex.from('posts_in_groups').insert({
        group_id: req.params.group_id,
        post: req.body.post,
