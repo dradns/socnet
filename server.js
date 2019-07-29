@@ -371,6 +371,7 @@ server.get('/groups/:group_id', async (req, res) => {
   let subscribed = [];
   let subscribers = [];
   let posts = [];
+  let allUsers = await knex.from('users');
     let likesCounter = [];
     await knex.from('groups').where('id','=', req.params.group_id)
         .then(async (rows) => {
@@ -379,8 +380,7 @@ server.get('/groups/:group_id', async (req, res) => {
             .catch((err) => { console.log( err); throw err });
           Object.assign(response, rows[0]);
           response.isSubscribed = subscribed.some((some) => some.group_id === rows[0].id);
-          subscribers = await knex.from('groups_members').where('group_id', '=', req.params.group_id)
-            .map(item => item.user_id);
+          subscribers = await knex.from('groups_members').where('group_id', '=', req.params.group_id).then(rows => rows.map(item => item.user_id));
             await knex.from('posts_in_groups').where('group_id', '=', req.params.group_id)
               .then( async (rows) => {
                 let likedPosts = await knex.from('likes_to_posts').where('author_id', '=', jwtDecode(req.headers.authorization.slice(7)).userID);
@@ -390,6 +390,7 @@ server.get('/groups/:group_id', async (req, res) => {
                      Object.assign(newPost, item);
                     newPost.likesCounter = likesCounter.filter( fil => fil.post_id === item.id).length;
                     newPost.isLiked = !!likedPosts.some((some) => some.post_id === item.id);
+                  newPost.author = allUsers.filter((user) => user.id === item.author_id)[0];
                   return newPost;
                 });
               })
@@ -397,24 +398,18 @@ server.get('/groups/:group_id', async (req, res) => {
               .catch((err) => { console.log( err); throw err });
           response.subscribers = subscribers;
           response.subCounter = subscribers.length;
-          response.posts = posts;
+          response.posts = posts.sort((a,b) => new Date(b.date) - new Date(a.date));
           res.json(response)
         })
         .catch((err) => { console.log( err); throw err });
 });
 
-server.get('/test', async (req, res) => {
-        // await knex.from('likes_to_posts').then(rows => res.json(rows)).catch((err) => { console.log( err); throw err });
-     await knex.from('posts_in_groups').then(rows => res.json(rows)).catch((err) => { console.log( err); throw err });
-});
+// server.get('/test', async (req, res) => {
+//         // await knex.from('likes_to_posts').then(rows => res.json(rows)).catch((err) => { console.log( err); throw err });
+//      await knex.from('posts_in_groups').then(rows => res.json(rows)).catch((err) => { console.log( err); throw err });
+// });
 
-server.get('/feed', async (req, res) => {
-    // await knex.from('likes_to_posts').then(rows => res.json(rows)).catch((err) => { console.log( err); throw err });
-    await knex.from('groups_members').where('user_id', '=', jwtDecode(req.headers.authorization.slice(7)).userID).then(async (rows) => {
-        await knex.from('posts_in_groups')
-    }).catch((err) => { console.log( err); throw err });
-});
-
+//добавить пост в группу
 server.post('/groups/:group_id', async (req, res) => {
    await knex.from('posts_in_groups').insert({
        group_id: req.params.group_id,
@@ -425,6 +420,7 @@ server.post('/groups/:group_id', async (req, res) => {
        .catch((err) => { console.log( err); throw err });
 });
 
+//добавить лайк к посту
 server.post('/posts/:post_id', async (req, res) => {
     await knex.from('likes_to_posts').insert({
         post_id: req.params.post_id,
@@ -433,12 +429,33 @@ server.post('/posts/:post_id', async (req, res) => {
         .catch((err) => { console.log( err); throw err });
 });
 
+//убрать лайк
 server.delete('/posts/:post_id', async (req, res) => {
     await knex.from('likes_to_posts').delete().where({
         post_id: req.params.post_id,
         author_id: jwtDecode(req.headers.authorization.slice(7)).userID })
         .then((rows) => res.sendStatus(200))
         .catch((err) => { console.log( err); throw err });
+});
+
+//получить ленту новостей
+server.get('/feed', async (req, res) => {
+  let groupsArray = await knex.from('groups_members').where('user_id', '=', jwtDecode(req.headers.authorization.slice(7)).userID);
+  let allPosts = await knex.from('posts_in_groups');
+  let allUsers = await knex.from('users');
+  let likesCounter =  await knex.from('likes_to_posts');
+  let likedPosts = await knex.from('likes_to_posts').where('author_id', '=', jwtDecode(req.headers.authorization.slice(7)).userID);
+  let result = allPosts.filter( (post) => {
+    let postData ={};
+   if(groupsArray.some( group => group.group_id === post.group_id)){
+     postData.isLiked = !!likedPosts.some((some) => some.post_id === post.id);
+     postData.likesCounter = likesCounter.filter( fil => fil.post_id === post.id).length;
+     postData.author = allUsers.filter((user) => user.id === post.author_id)[0];
+     Object.assign(post, postData);
+     return postData;
+   }
+  }).sort((a,b) => new Date(b.date) - new Date(a.date));
+  res.json(result);
 });
 
 server.listen(PORT, ()=> {console.log(`server just starting on ${PORT} port`  + '\n ')});
