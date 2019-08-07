@@ -79,7 +79,8 @@ server.post('/registration', upload.single('userpic'), async (req, res) => {
         let check;//проверка на присутствие данного ящика в базе
   //      console.log(req.body);
         await knex.from('users').where('email', '=', req.body.email)
-            .then((user)=>{check = user.length; console.log(check)})//проверка осуществляется путем нахождения длины массива
+            .then((user)=>{check = user.length;
+            console.log(check)})//проверка осуществляется путем нахождения длины массива
             .catch((err) => console.log(err));
         if (check > 0){///проверка на присутствие данного ящика
     //        console.log('user already exist');
@@ -123,83 +124,73 @@ server.post('/user/update', (req, res) => {
 
 ////ПОИСК ЮЗЕРА//////////
 server.get('/users/find/:fn', (req, res) => {
-    knex.from('users').select('*').where('firstname','=', req.params.fn)
+    knex.from('users').where('firstname','=', req.params.fn)
         .then((rows) => {res.json(rows);})
         .catch((err) => { console.log( err); throw err });
 });
 
 ////ОБЩИЙ СПИСОК ЮЗЕРОВ//////
 server.get('/users', (req, res) => {
-    knex.from('users').select("*")
+    knex.from('users')
         .then((rows) => {res.json(rows);})
         .catch((err) => { console.log( err); throw err });
-        // .finally(() => {
-        //     knex.destroy();
-        // });
 });
 
 //////LOGIN////
 server.post('/login', async (req, res) => {
-        let email;//хранить емэйл из базы
-        let pass;//хранить пассворд хэш из базы
-        let userID;//хранить юзерАЙДИ из базы
-        let token;//хранить токен из базы
-        let firstname;
+  let email;//хранить емэйл из базы
+  let pass;//хранить пассворд хэш из базы
+  let userID;//хранить юзерАЙДИ из базы
+  let token;//хранить токен из базы
+  let firstname;
 
-        if (!req.body.email || !req.body.password){  //проверка на корректность запроса
-            console.log('WRONG REQUEST');                                  //проверка на корректность запроса
-            return;                                                        //проверка на корректность запроса
-        }                                                                  //проверка на корректность запроса
-        await knex.from('users').where('email', '=', req.body.email)
-            .then((user)=>
-            {
-                email = user[0].email;//вытаскиваем емэйл из базы
-                pass = user[0].password_hash;//вытаскиваем пассвордхэш из базы
-                userID = user[0].id;//вытаскиваем юзерайди из базы
-                firstname = user[0].firstname;
-            })
-            .catch((err) => console.log(err));
-        // await console.log('email из базы ' + email + '\n ');///дебажим
-        // await console.log('pass_hash из базы ' + pass  + '\n ');///дебажим
-        //  await console.log('USER ID из базы ' + userID  + '\n ');///дебажим
-        // await console.log('body pass из формы ' +req.body.password  + '\n ');///дебажим
-       await bcrypt.compare(req.body.password, pass, (err, resp) => {//верифицируем пароли
-            if (err){
-  //              console.log('uuuuuups errror ' + err);
-            }
-            if (resp){
-                //если все хорошо генерим токен
-                token = jwt.sign(//генерим токен
-                    {
-                        userID: userID,
-                        name: firstname, //генерим токен
-                    }, 'secret', {expiresIn: "3 hours"});//генерим токен
-                res
-                  .status(200)
-                  .send({token: token});
+  //проверка на корректность запроса
+  if (req.body.email === '' || req.body.password === '') {
+    return res
+      .status(401)
+      .send({err: 'Пустой e-mail или пароль!'});
+  } else if (req.body.email.length < 6 || req.body.password.length < 6) {
+    return res
+      .status(401)
+      .send({err: 'Длина e-mail или пароля меньше 6 символов!'});
+  } else {
+    await knex.from('users').where('email', '=', req.body.email)
+      .then(async (user) => {
+        if (user.length === 1) {
+          email = user[0].email;//вытаскиваем емэйл из базы
+          pass = user[0].password_hash;//вытаскиваем пассвордхэш из базы
+          userID = user[0].id;//вытаскиваем юзерайди из базы
+          firstname = user[0].firstname;
 
-                 // console.log('its ok pass');
-
-                //ПЕРЕСЫЛКА JWT НЕ РЕАЛИЗОВАННА
-                //ПЕРЕСЫЛКА JWT НЕ РЕАЛИЗОВАННА
-                //ПЕРЕСЫЛКА JWT НЕ РЕАЛИЗОВАННА
-                // console.log('woila'  + '\n ');//типа все хорошо
-                // fetch('http://localhost:3020/resource/secret', {
-                //     "headers": {
-                //         "Content-Type": "application/json",
-                //         "Authorization": "Bearer " + token ,
-                //     }
-                // }
-                // ).then(res=>console.log(res));
-              //  return res.send(token);
+          await bcrypt.compare(req.body.password, pass, (err, resp) => {//верифицируем пароли
+            if (resp) {
+              //если все хорошо генерим токен
+              token = jwt.sign(//генерим токен
+                {
+                  userID: userID,
+                  name: firstname, //генерим токен
+                }, 'secret', {expiresIn: "3 hours"});//генерим токен
+              return res
+                .status(200)
+                .send({token: token});
             } else {
-                console.log('passwords does not match'  + '\n ');//ПАРОЛИ НЕ СОВПАДАЮТ
-                res.sendStatus(401);
+              console.log('passwords does not match' + '\n ');//ПАРОЛИ НЕ СОВПАДАЮТ
+              return res
+                .status(401)
+                .send({err: 'Пароль или e-mail не верен!'})
             }
-
-        });
-
-    });
+          });
+        } else {
+          throw new Error();
+        }
+      })
+      .catch(() => {
+        return res
+          .status(401)
+          .send({err: 'Такого пользователя не существует!'});
+      });
+  }
+});
 
 
 // //EVENTS////
@@ -390,7 +381,9 @@ server.get('/groups/:group_id', async (req, res) => {
             .catch((err) => { console.log( err); throw err });
           Object.assign(response, rows[0]);
           response.isSubscribed = subscribed.some((some) => some.group_id === rows[0].id);
-          subscribers = await knex.from('groups_members').where('group_id', '=', req.params.group_id).then(rows => rows.map(item => item.user_id));
+          subscribers = await knex.from('groups_members')
+            .where('group_id', '=', req.params.group_id)
+            .then(rows => rows.map(item => item.user_id));
             await knex.from('posts_in_groups').where('group_id', '=', req.params.group_id)
               .then( async (rows) => {
                 let likedPosts = await knex.from('likes_to_posts').where('author_id', '=', jwtDecode(req.headers.authorization.slice(7)).userID);
@@ -404,7 +397,6 @@ server.get('/groups/:group_id', async (req, res) => {
                   return newPost;
                 });
               })
-
               .catch((err) => { console.log( err); throw err });
           response.subscribers = subscribers;
           response.subCounter = subscribers.length;
@@ -421,14 +413,17 @@ server.get('/groups/:group_id', async (req, res) => {
 
 //добавить пост в группу
 server.post('/groups/:group_id', async (req, res) => {
-  console.log(req.body.post);
-   await knex.from('posts_in_groups').insert({
-       group_id: req.params.group_id,
-       post: req.body.post,
-       date: new Date(),
-       author_id: jwtDecode(req.headers.authorization.slice(7)).userID })
-       .then((rows) => res.sendStatus(200))
-       .catch((err) => { console.log( err); throw err });
+  await knex.from('posts_in_groups').insert({
+      group_id: req.params.group_id,
+      post: req.body.post,
+      date: new Date(),
+      author_id: jwtDecode(req.headers.authorization.slice(7)).userID
+    })
+      .then((rows) => res.sendStatus(200))
+      .catch((err) => {
+        console.log(err);
+        throw err
+      });
 });
 
 //добавить лайк к посту
