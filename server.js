@@ -62,53 +62,68 @@ server.get('/resource/secret',jwtCheck, (req, res) => {
 
 ////ПОИСК ПО АЙДИ////////
 server.get('/users/:id', (req, res) => {
-    knex.from('users').select("*").where('id','=',req.params.id)
+    knex.from('users').where('id','=',req.params.id)
         .then((rows) => res.json(rows))
         .catch((err) => { console.log( err); throw err });
 });
 
 ////РЕГИСТРАЦИЯ ЮЗЕРА/////
-server.post('/registration', upload.single('userpic'), async (req, res) => {
-    if (req.file){
-//        console.log(req.file);
-        await knex.from('users').where('id','=', req.body.id)
-            .update({avatar: req.file.filename})
-            .then((rows) => res.json(rows))
-            .catch((err) => { console.log( err); throw err });
-    }else{
-        let check;//проверка на присутствие данного ящика в базе
-  //      console.log(req.body);
-        await knex.from('users').where('email', '=', req.body.email)
-            .then((user)=>{check = user.length;
-            console.log(check)})//проверка осуществляется путем нахождения длины массива
-            .catch((err) => console.log(err));
-        if (check > 0){///проверка на присутствие данного ящика
-    //        console.log('user already exist');
-        }else{
-            const salt = await bcrypt.genSalt(10);//хэшируем пароль
-            const ph = await bcrypt.hash(req.body.ph, salt);//хэшируем пароль
-            await knex('users').insert({firstname : req.body.fn, email: req.body.email, password_hash : ph})
-                .then( () => {knex('users').where('email', '=', req.body.email)
-                    .then(async (user)=> {console.log(user[0].id)});})
-                // .then((rows) => {res.sendStatus(200);})
-                .then(async () => {
-                    let userID;
-                    await knex.from('users').where('email', '=', req.body.email)
-                        .then((user)=>
-                        {
-                            userID = user[0].id;//вытаскиваем юзерайди из базы
-                        })
-                        .catch((err) => console.log(err));
-                    let token = jwt.sign(//генерим токен
-                            {
-                                userID: userID,//генерим токен
-                            }, 'secret', {expiresIn: 3600});
-                    res.send({token: token});
-                    // res.sendStatus(200);
-                })
-                .catch((err) => { console.log( err); throw err });
+server.post('/registration', async (req, res) => {
+  console.log(req.body);
+  if(req.body.email === '' || req.body.password === '' || req.body.firstname === '') {
+    return res
+      .status(401)
+      .send({err: 'Пустой e-mail или пароль!'});
+  } else if (req.body.email.length < 6 || req.body.password.length < 6 || req.body.firstname.length < 2) {
+    return res
+      .status(401)
+      .send({err: 'Длина e-mail, имени или пароля меньше 6 символов!'});
+  } else {
+    await knex.from('users').where('email', '=', req.body.email)
+      .then(async (user) => {
+        if (user.length === 0) {
+          const salt = await bcrypt.genSalt(10);//хэшируем пароль
+          const ph = await bcrypt.hash(req.body.password, salt);//хэшируем пароль
+          await knex('users').insert({
+            firstname: req.body.firstname,
+            email: req.body.email,
+            password_hash: ph
+          })
+            .then(async () => {
+              await knex.from('users').where('email', '=', req.body.email)
+                .then((user) => {
+                 const userID = user[0].id;//вытаскиваем юзерайди из базы
+                  const token = jwt.sign({
+                   userID,//генерим токен
+                }, 'secret', {expiresIn: "3 hours"});
+                  return res
+                    .status(200)
+                    .send({ token });
+            })
+                .catch((err) => {
+                  return res
+                    .status(401)
+                    .send({ err });
+                });
+            })
+            .catch((err) => {
+              return res
+                .status(401)
+                .send({ err });
+            });
+        } else {
+          return res
+            .status(401)
+            .send({err: 'Пользователь с таким e-mail уже существует!'})
         }
-    }
+      })
+      .catch((err) => {
+        return res
+          .status(401)
+          .send({ err });
+      });
+
+  }
 });
 
 ////ОБНОВЛЕНИЕ ЮЗЕРА/////
@@ -174,7 +189,6 @@ server.post('/login', async (req, res) => {
                 .status(200)
                 .send({token: token});
             } else {
-              console.log('passwords does not match' + '\n ');//ПАРОЛИ НЕ СОВПАДАЮТ
               return res
                 .status(401)
                 .send({err: 'Пароль или e-mail не верен!'})
