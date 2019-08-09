@@ -60,16 +60,59 @@ server.get('/resource/secret',jwtCheck, (req, res) => {
 });
 
 
-////ПОИСК ПО АЙДИ////////
+////ИНФОРМАЦИЯ О ЮЗЕРЕ ПО АЙДИ////////
 server.get('/users/:id', (req, res) => {
     knex.from('users').where('id','=',req.params.id)
-        .then((rows) => res.json(rows))
-        .catch((err) => { console.log( err); throw err });
+        .then((rows) => {
+          console.log(rows);
+          res
+            .status(200)
+            .json(rows);
+        })
+        .catch((err) => {
+          console.log(err);
+          return res
+            .status(401)
+            .send({ err });
+        });
+});
+
+////ОБНОВЛЕНИЕ ИНФОРМАЦИИ О ЮЗЕРЕ/////
+server.put('/users/:id/update', jwtCheck, (req, res) => {
+  if (jwtDecode(req.headers.authorization.slice(7)).userID === req.params.id) {
+    const {
+      firstname, secondname, middlename,
+      innerPhone, phone, email, omega,
+      avatar, position, address
+    } = req.body;
+
+    knex('users').where('id', '=', jwtDecode(req.headers.authorization.slice(7)).userID)
+      .update({
+        firstname,
+        email,
+        secondname,
+        middlename,
+        innerPhone,
+        phone,
+        omega,
+        avatar,
+        position,
+        address
+      })
+      .then((rows) => res.sendStatus(200))
+      .catch((err) => {
+        console.log(err);
+        res.send(err)
+      });
+  } else {
+    res
+      .status(401)
+      .send({ err: 'У Вас нет прав редактировать этого пользователя!' });
+  }
 });
 
 ////РЕГИСТРАЦИЯ ЮЗЕРА/////
 server.post('/registration', async (req, res) => {
-  console.log(req.body);
   if(req.body.email === '' || req.body.password === '' || req.body.firstname === '') {
     return res
       .status(401)
@@ -126,16 +169,7 @@ server.post('/registration', async (req, res) => {
   }
 });
 
-////ОБНОВЛЕНИЕ ЮЗЕРА/////
-server.post('/user/update', (req, res) => {
-//    console.log(req.body);
-    knex('users').where('id','=', req.body.id)
-        .update({firstname: req.body.firstname, email: req.body.email, password_hash: req.body.password_hash})
-        .then((rows) => {
-                res.sendStatus(200);
-                })
-        .catch((err) => { console.log( err); res.send(err) });
-});
+
 
 ////ПОИСК ЮЗЕРА//////////
 server.get('/users/find/:fn', (req, res) => {
