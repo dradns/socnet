@@ -78,8 +78,9 @@ server.get('/users/:id', (req, res) => {
 });
 
 ////ОБНОВЛЕНИЕ ИНФОРМАЦИИ О ЮЗЕРЕ/////
-server.put('/users/:id/update', jwtCheck, (req, res) => {
-  if (jwtDecode(req.headers.authorization.slice(7)).userID === req.params.id) {
+server.put('/users/:id/update', (req, res) => {
+
+  if (jwtDecode(req.headers.authorization.slice(7)).userID === parseInt(req.params.id)) {
     const {
       firstname, secondname, middlename,
       innerPhone, phone, email, omega,
