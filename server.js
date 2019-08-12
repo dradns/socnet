@@ -86,7 +86,6 @@ server.put('/users/:id/update', (req, res) => {
       innerPhone, phone, email, omega,
       avatar, position, address
     } = req.body;
-
     knex('users').where('id', '=', jwtDecode(req.headers.authorization.slice(7)).userID)
       .update({
         firstname,
